@@ -24,76 +24,20 @@ function App() {
 
   const [bgColor, setBGColor] = useState<string>('#FFFFFF')
 
-  useEffect(() => {
-
-    console.log(`VALUE - ${hex}`)
-
-    if (isValidHex()) { // Hex valid
-
-      console.log("convert : "+convert(hex, ColorType.hex, ColorType.hex))
-      setBGColor(convert(hex, ColorType.hex, ColorType.hex))
-      setRgb(convert(hex, ColorType.hex, ColorType.rgb))
-      setRgba(convert(hex, ColorType.hex, ColorType.rgba))
-    }
-    
-  }, [hex])
-
-  useEffect(() => {
-    // console.log('useEffect_RGB')
-
-    if (false) { // rgb valid
-      setHex(convert(rgb, ColorType.rgb, ColorType.hex))
-      setRgba(convert(rgb, ColorType.rgb, ColorType.rgba))
-    }
-
-  }, [rgb])
-
-  useEffect(() => {
-
-    // console.log('useEffect_RGBA')
-    
-    if (false) { // rgba valid
-      setHex(convert(rgba, ColorType.rgba, ColorType.hex))
-      setRgb(convert(rgba, ColorType.rgba, ColorType.rgb))
-    }
-
-  }, [rgba])
-
-  const isValidHex: () => boolean = () => {
-    let colorHex = hex
-
-    return hexRegEx.test(colorHex)
-
-    if (colorHex.charAt(0) != '#') return false
-
-    colorHex = colorHex.replace('#','')
-
-    const colorHexLength = colorHex.length
-    if (colorHexLength != 3 &&
-      colorHexLength != 4 &&
-      colorHexLength != 6 &&
-      colorHexLength != 8) {
-        return false    
-    }
-
-    for (let index = 0; index < colorHexLength; index++) {
-      const element = colorHex[index];
-      const elementDecimal = parseInt(parseInt(element).toString(10))
-      if (elementDecimal < 0 && elementDecimal > 16) {
-        return false
-      }
-    }
-
-    return true
-  }
-
   function convertValueLimit(oldValue: number,
     oldMin: number,
     oldMax: number,
     newMin: number,
     newMax: number): number {
 
-    return parseInt( `${(((oldValue - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin}` )
+      let oV = parseFloat(`${oldValue}`)
+      let oMin = parseFloat(`${oldMin}`)
+      let oMax = parseFloat(`${oldMax}`)
+      let nMin = parseFloat(`${newMin}`)
+      let nMax = parseFloat(`${newMax}`)
+      
+
+    return parseFloat(parseFloat(`${(((oV - oMin) * (nMax - nMin)) / (oMax - oMin)) + nMin}`).toFixed(2))
   }
 
   function convert(color: string, from: ColorType, to: ColorType): string {
@@ -120,15 +64,15 @@ function App() {
           BB = parseInt(`${value.charAt(2)}${value.charAt(2)}`, 16)
           AA = parseInt(`${value.charAt(3)}${value.charAt(3)}`, 16)
         } else if (value.length == 6) { // FFFFFF
-          RR = parseInt(value.slice(0,2), 16)
-          GG = parseInt(value.slice(2,4), 16)
-          BB = parseInt(value.slice(4,6), 16)
+          RR = parseInt(value.slice(0, 2), 16)
+          GG = parseInt(value.slice(2, 4), 16)
+          BB = parseInt(value.slice(4, 6), 16)
           AA = parseInt(`FF`, 16)
         } else /*if (value.length == 8)*/ { // #FFFFFFFF
-          RR = parseInt(value.slice(0,2), 16)
-          GG = parseInt(value.slice(2,4), 16)
-          BB = parseInt(value.slice(4,6), 16)
-          AA = parseInt(value.slice(6,8), 16)
+          RR = parseInt(value.slice(0, 2), 16)
+          GG = parseInt(value.slice(2, 4), 16)
+          BB = parseInt(value.slice(4, 6), 16)
+          AA = parseInt(value.slice(6, 8), 16)
         }
         break;
       case ColorType.rgb: {
@@ -141,8 +85,7 @@ function App() {
       }
       case ColorType.rgba: {
         const colorsDecimal = color.replace('rgba', '').replace('(', '').replace(')', '').replace(' ', '').split(',')
-        const alphaValue = convertValueLimit(parseInt(colorsDecimal[3]), 0,1,0,255)
-        console.log(`alphaValue : ${alphaValue}`)
+        const alphaValue = convertValueLimit(parseFloat(colorsDecimal[3]), 0, 1, 0, 255)
         RR = parseInt(colorsDecimal[0])
         GG = parseInt(colorsDecimal[1])
         BB = parseInt(colorsDecimal[2])
@@ -151,7 +94,7 @@ function App() {
       }
     }
 
-    console.log(`RR : ${RR} GG : ${GG} BB : ${BB} AA : ${AA}`)
+    // console.log(`RR : ${RR} GG : ${GG} BB : ${BB} AA : ${AA}`)
 
     switch (to) {
       case ColorType.hex:
@@ -170,34 +113,69 @@ function App() {
           strBB = `0${strBB}`
         }
 
-        let strAA = AA.toString(16)
+        let strAA = parseInt(`${AA}`).toString(16)
         if (strAA.length == 1) {
           strAA = `0${strAA}`
         }
-
-        return (`#${strRR}${strGG}${strBB}${strAA}`)
+        return (`#${strRR}${strGG}${strBB}${strAA}`).toUpperCase()
       case ColorType.rgb: {
-        return `rgb(${RR}, ${GG}, ${BB})`
+        return `rgb(${RR},${GG},${BB})`
       }
       case ColorType.rgba: {
         const alpha = convertValueLimit(AA, 0, 255, 0, 1)
-        
-        return `rgba(${RR}, ${GG}, ${BB}, ${alpha})`
+        return `rgba(${RR},${GG},${BB},${alpha})`
       }
     }
     return ''
   }
 
+  function copyHEX() {
+    navigator.clipboard.writeText(hex)
+  }
+  function copyRGB() {
+    navigator.clipboard.writeText(rgb)
+  }
+  function copyRGBA() {
+    navigator.clipboard.writeText(rgba)
+  }
+
   return <div className='main' style={{ backgroundColor: bgColor }}>
-    <input style={{}} placeholder='#FFFFFF' value={hex} onChange={e => {
-      setHex(e.target.value)
-    }}></input>
-    <input style={{}} placeholder='rgb(255, 255, 255)' value={rgb} onChange={e => {
-      setRgb(e.target.value)
-    }}></input>
-    <input style={{}} placeholder='rgba(255, 255, 255, 1)' value={rgba} onChange={e => {
-      setRgba(e.target.value)
-    }}></input>
+    <div>
+      <input type='text' style={{}} placeholder='#FFFFFF' value={hex} onChange={e => {
+        const value = e.target.value
+        setHex(value)
+        if (hexRegEx.test(value)) { // Hex valid
+          setBGColor(value)
+          setRgb(convert(value, ColorType.hex, ColorType.rgb))
+          setRgba(convert(value, ColorType.hex, ColorType.rgba))
+        }
+      }}></input>
+      <button type="button" className="btn btn-outline-secondary" onClick={copyHEX}>copy</button>
+    </div>
+    <div>
+      <input style={{}} placeholder='rgb(255, 255, 255)' value={rgb} onChange={e => {
+        const value = e.target.value
+        setRgb(value)
+        if (rgbRegEx.test(value)) { // rgb valid
+          setBGColor(value)
+          setHex(convert(value, ColorType.rgb, ColorType.hex))
+          setRgba(convert(value, ColorType.rgb, ColorType.rgba))
+        }
+      }}></input>
+      <button type="button" className="btn btn-outline-secondary" onClick={copyRGB}>copy</button>
+    </div>
+    <div>
+      <input style={{}} placeholder='rgba(255, 255, 255, 1)' value={rgba} onChange={e => {
+        const value = e.target.value
+        setRgba(value)
+        if (rgbaRegEx.test(value)) { // rgba valid
+          setBGColor(value)
+          setHex(convert(value, ColorType.rgba, ColorType.hex))
+          setRgb(convert(value, ColorType.rgba, ColorType.rgb))
+        }
+      }}></input>
+      <button type="button" className="btn btn-outline-secondary" onClick={copyRGBA}>copy</button>
+    </div>
   </div>
 }
 
