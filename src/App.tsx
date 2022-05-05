@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
-
 import "bootstrap"
 
 enum ColorType {
@@ -9,6 +7,7 @@ enum ColorType {
   // hexA,
   rgb,
   rgba,
+  uicolor,
 }
 
 function App() {
@@ -16,11 +15,13 @@ function App() {
   const hexRegEx = /^#[0-9A-F]{8}|^#[0-9A-F]{6}|^#[0-9A-F]{3,4}/
   const rgbRegEx = /^rgb\((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1}\)/
   const rgbaRegEx = /^rgba\((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(0\.[0-9]{1,2}|1\.[0]{1,2}|[0-1]{1}){1}\)/
+  const uicolorRegEx = ''
 
   const [hex, setHex] = useState<string>('');
   // const [hexA, setHexA] = useState<string>('');
   const [rgb, setRgb] = useState<string>('');
   const [rgba, setRgba] = useState<string>('');
+  const [uicolor, setUIColor] = useState<string>('');
 
   const [bgColor, setBGColor] = useState<string>('#FFFFFF')
 
@@ -30,14 +31,14 @@ function App() {
     newMin: number,
     newMax: number): number {
 
-      let oV = parseFloat(`${oldValue}`)
-      let oMin = parseFloat(`${oldMin}`)
-      let oMax = parseFloat(`${oldMax}`)
-      let nMin = parseFloat(`${newMin}`)
-      let nMax = parseFloat(`${newMax}`)
-      
+    let oV = parseFloat(`${oldValue}`)
+    let oMin = parseFloat(`${oldMin}`)
+    let oMax = parseFloat(`${oldMax}`)
+    let nMin = parseFloat(`${newMin}`)
+    let nMax = parseFloat(`${newMax}`)
 
-    return parseFloat(parseFloat(`${(((oV - oMin) * (nMax - nMin)) / (oMax - oMin)) + nMin}`).toFixed(2))
+
+    return parseFloat(parseFloat(`${(((oV - oMin) * (nMax - nMin)) / (oMax - oMin)) + nMin}`).toFixed(3))
   }
 
   function convert(color: string, from: ColorType, to: ColorType): string {
@@ -92,6 +93,25 @@ function App() {
         AA = alphaValue
         break;
       }
+      case ColorType.uicolor: {
+        const colorsDecimal = color.replace('UIColor', '')
+          .replace('red', '')
+          .replace('green', '')
+          .replace('blue', '')
+          .replace('alpha', '')
+          .replace(':', '')
+          .replace('(', '')
+          .replace(')', '')
+          .replace(' ', '')
+          .split(',')
+          
+        RR = convertValueLimit(parseFloat(colorsDecimal[0]), 0, 1, 0, 255)
+        GG = convertValueLimit(parseFloat(colorsDecimal[1]), 0, 1, 0, 255)
+        BB = convertValueLimit(parseFloat(colorsDecimal[2]), 0, 1, 0, 255)
+        AA = convertValueLimit(parseFloat(colorsDecimal[3]), 0, 1, 0, 255)
+        break;
+      }
+
     }
 
     // console.log(`RR : ${RR} GG : ${GG} BB : ${BB} AA : ${AA}`)
@@ -125,6 +145,13 @@ function App() {
         const alpha = convertValueLimit(AA, 0, 255, 0, 1)
         return `rgba(${RR},${GG},${BB},${alpha})`
       }
+      case ColorType.uicolor: {
+        const alpha = convertValueLimit(AA, 0, 255, 0, 1)
+        const red = convertValueLimit(RR, 0, 255, 0, 1)
+        const green = convertValueLimit(GG, 0, 255, 0, 1)
+        const blue = convertValueLimit(BB, 0, 255, 0, 1)
+        return `UIColor(red: ${red}, green: ${green}, blue: ${blue}, alpha: ${alpha})`
+      }
     }
     return ''
   }
@@ -148,6 +175,7 @@ function App() {
           setBGColor(value)
           setRgb(convert(value, ColorType.hex, ColorType.rgb))
           setRgba(convert(value, ColorType.hex, ColorType.rgba))
+          setUIColor(convert(value, ColorType.hex, ColorType.uicolor))
         }
       }}></input>
       <button type="button" className="btn btn-outline-secondary" onClick={copyHEX}>copy</button>
@@ -160,6 +188,7 @@ function App() {
           setBGColor(value)
           setHex(convert(value, ColorType.rgb, ColorType.hex))
           setRgba(convert(value, ColorType.rgb, ColorType.rgba))
+          setUIColor(convert(value, ColorType.rgb, ColorType.uicolor))
         }
       }}></input>
       <button type="button" className="btn btn-outline-secondary" onClick={copyRGB}>copy</button>
@@ -172,7 +201,21 @@ function App() {
           setBGColor(value)
           setHex(convert(value, ColorType.rgba, ColorType.hex))
           setRgb(convert(value, ColorType.rgba, ColorType.rgb))
+          setUIColor(convert(value, ColorType.rgba, ColorType.uicolor))
         }
+      }}></input>
+      <button type="button" className="btn btn-outline-secondary" onClick={copyRGBA}>copy</button>
+    </div>
+
+    <div>
+      <input style={{}} placeholder='UIColor(red: 1, green: 1, blue: 1,alpha: 1)' value={uicolor} onChange={e => {
+        // const value = e.target.value
+        // setRgba(value)
+        // if (rgbaRegEx.test(value)) { // rgba valid
+        //   setBGColor(value)
+        //   setHex(convert(value, ColorType.rgba, ColorType.hex))
+        //   setRgb(convert(value, ColorType.rgba, ColorType.rgb))
+        // }
       }}></input>
       <button type="button" className="btn btn-outline-secondary" onClick={copyRGBA}>copy</button>
     </div>
