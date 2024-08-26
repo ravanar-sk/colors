@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-import "bootstrap"
 
 enum ColorType {
   hex,
@@ -12,7 +11,7 @@ enum ColorType {
 
 function App() {
 
-  const hexRegEx = /^#[0-9A-F]{8}|^#[0-9A-F]{6}|^#[0-9A-F]{3,4}/
+  const hexRegEx = /^#[0-9A-Fa-f]{8}|^#[0-9A-Fa-f]{6}|^#[0-9A-Fa-f]{3,4}/
   const rgbRegEx = /^rgb\((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1}\)/
   const rgbaRegEx = /^rgba\((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]){1},(0\.[0-9]{1,2}|1\.[0]{1,2}|[0-1]{1}){1}\)/
   const uicolorRegEx = ''
@@ -23,7 +22,29 @@ function App() {
   const [rgba, setRgba] = useState<string>('');
   const [uicolor, setUIColor] = useState<string>('');
 
+  const [red, setRed] = useState<number>(0xFF);
+  const [green, setGreen] = useState<number>(0xFF);
+  const [blue, setBlue] = useState<number>(0xFF);
+
   const [bgColor, setBGColor] = useState<string>('#FFFFFF')
+
+  const [inputFieldClass, setInputFieldClass] = useState<string>('form-control bg-transparent border-dark text-dark');
+  const [copyBtnClass, setCopyBtnClass] = useState<string>('btn btn-outline-dark ms-2');
+
+  useEffect(() => { 
+    const contrast = calculateContrastColor();
+
+    if (contrast === "dark") {
+      setInputFieldClass('form-control bg-transparent border-dark text-dark');
+      setCopyBtnClass('btn btn-outline-dark ms-2');
+    } else if (contrast === "light") {
+      setInputFieldClass('form-control bg-transparent border-light text-light');
+      setCopyBtnClass('btn btn-outline-light ms-2');
+    } else {
+
+    }
+
+  }, [red, green, blue]);
 
   function convertValueLimit(oldValue: number,
     oldMin: number,
@@ -104,7 +125,7 @@ function App() {
           .replace(')', '')
           .replace(' ', '')
           .split(',')
-          
+
         RR = convertValueLimit(parseFloat(colorsDecimal[0]), 0, 1, 0, 255)
         GG = convertValueLimit(parseFloat(colorsDecimal[1]), 0, 1, 0, 255)
         BB = convertValueLimit(parseFloat(colorsDecimal[2]), 0, 1, 0, 255)
@@ -113,6 +134,12 @@ function App() {
       }
 
     }
+
+    console.log(`${RR} - ${GG} - ${BB} - ${AA}`);
+
+    setRed(RR);
+    setGreen(GG);
+    setBlue(BB);
 
     // console.log(`RR : ${RR} GG : ${GG} BB : ${BB} AA : ${AA}`)
 
@@ -166,22 +193,45 @@ function App() {
     navigator.clipboard.writeText(rgba)
   }
 
-  return <div className='main' style={{ backgroundColor: bgColor }}>
-    <div>
-      <input type='text' style={{}} placeholder='#FFFFFF' value={hex} onChange={e => {
-        const value = e.target.value
-        setHex(value)
-        if (hexRegEx.test(value)) { // Hex valid
-          setBGColor(value)
-          setRgb(convert(value, ColorType.hex, ColorType.rgb))
-          setRgba(convert(value, ColorType.hex, ColorType.rgba))
-          setUIColor(convert(value, ColorType.hex, ColorType.uicolor))
-        }
-      }}></input>
-      <button type="button" className="btn btn-outline-secondary" onClick={copyHEX}>copy</button>
+  function calculateContrastColor(): string {
+    // Counting the perceptive luminance - human eye favors green color...      
+    const luminance = ( (0.299 * red) + (0.587 * green) + (0.114 * blue) )/255;
+    
+    if (luminance > 0.5) {
+      //  d = 0; // bright colors - black font
+      return "dark";
+    }
+    else {
+      //  d = 255; // dark colors - white font
+      return "light";
+    }
+}
+
+  return <div className='vw-100 vh-100 justify-content-center align-items-center d-inline-flex flex-column'
+    style={{ backgroundColor: bgColor }}>
+    <div className='d-inline-flex'>
+      <input 
+      type='text'
+        className={inputFieldClass}
+        placeholder='#FFFFFF' value={hex} onChange={e => {
+          const value = e.target.value
+          setHex(value)
+          if (hexRegEx.test(value)) { // Hex valid
+
+            setBGColor(value)
+            setRgb(convert(value, ColorType.hex, ColorType.rgb))
+            setRgba(convert(value, ColorType.hex, ColorType.rgba))
+            setUIColor(convert(value, ColorType.hex, ColorType.uicolor))
+          }
+        }}></input>
+      <button type="button"
+        className={copyBtnClass} onClick={copyHEX}>copy</button>
     </div>
-    <div>
-      <input style={{}} placeholder='rgb(255, 255, 255)' value={rgb} onChange={e => {
+    <div className='d-inline-flex mt-2'>
+      <input 
+      type='text'
+      className={inputFieldClass}
+       placeholder='rgb(255, 255, 255)' value={rgb} onChange={e => {
         const value = e.target.value
         setRgb(value)
         if (rgbRegEx.test(value)) { // rgb valid
@@ -191,10 +241,13 @@ function App() {
           setUIColor(convert(value, ColorType.rgb, ColorType.uicolor))
         }
       }}></input>
-      <button type="button" className="btn btn-outline-secondary" onClick={copyRGB}>copy</button>
+      <button type="button" className={copyBtnClass} onClick={copyRGB}>copy</button>
     </div>
-    <div>
-      <input style={{}} placeholder='rgba(255, 255, 255, 1)' value={rgba} onChange={e => {
+    <div className='d-inline-flex mt-2'>
+      <input 
+      type='text'
+      className={inputFieldClass}
+       placeholder='rgba(255, 255, 255, 1)' value={rgba} onChange={e => {
         const value = e.target.value
         setRgba(value)
         if (rgbaRegEx.test(value)) { // rgba valid
@@ -204,10 +257,10 @@ function App() {
           setUIColor(convert(value, ColorType.rgba, ColorType.uicolor))
         }
       }}></input>
-      <button type="button" className="btn btn-outline-secondary" onClick={copyRGBA}>copy</button>
+      <button type="button" className={copyBtnClass} onClick={copyRGBA}>copy</button>
     </div>
 
-    <div>
+    {/* <div>
       <input style={{}} placeholder='UIColor(red: 1, green: 1, blue: 1,alpha: 1)' value={uicolor} onChange={e => {
         // const value = e.target.value
         // setRgba(value)
@@ -218,7 +271,7 @@ function App() {
         // }
       }}></input>
       <button type="button" className="btn btn-outline-secondary" onClick={copyRGBA}>copy</button>
-    </div>
+    </div> */}
   </div>
 }
 
